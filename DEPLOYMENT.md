@@ -41,6 +41,19 @@ Notes:
 - This approach builds frontend on each backend deploy and serves it from the same service.
 - Vercel provides better CDN and static hosting; use Option B only if you want a single service.
 
+Automating migrations via GitHub Actions
+---------------------------------------
+
+You can automatically run migrations after pushes to `main` by adding a GitHub Actions workflow. This repo includes `.github/workflows/run-migrations.yml` which runs `npm run migrate` on push to `main` or via manual dispatch.
+
+Before using this workflow, add a repository secret named `RENDER_DATABASE_URL` with your Render Postgres connection string (the action injects it into `DATABASE_URL`).
+
+To enable:
+1. Go to your GitHub repo -> Settings -> Secrets -> Actions -> New repository secret
+2. Name: `RENDER_DATABASE_URL`
+3. Value: the DATABASE_URL from Render Postgres
+4. Save. The workflow will pick it up on the next push to `main`.
+
 Local development notes
 -----------------------
 

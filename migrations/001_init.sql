@@ -1,4 +1,9 @@
 -- migrations/001_init.sql
+
+
+
+
+
 CREATE TABLE IF NOT EXISTS transcripts (
   id SERIAL PRIMARY KEY,
   filename TEXT,
