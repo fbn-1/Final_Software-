@@ -54,17 +54,16 @@ app.use(express.static(frontendBuildPath));
 app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 // For SPA client-side routing: return index.html for unknown GET requests that are not API routes
-app.get('*', (req, res, next) => {
-	// Only handle GET requests for non-API paths
+// Use a pathless middleware to avoid path-to-regexp parsing issues with '*' on some runtimes.
+app.use((req, res, next) => {
 	if (req.method !== 'GET') return next();
 	const apiPrefixes = ['/upload', '/transcripts', '/annotations', '/bloombergdata', '/health', '/api'];
 	if (apiPrefixes.some(p => req.path.startsWith(p))) return next();
 	const indexHtml = path.join(frontendBuildPath, 'index.html');
-	return res.sendFile(indexHtml, err => {
+	res.sendFile(indexHtml, err => {
 		if (err) return next();
 	});
 });
-
 
 
 // Ensure database columns/types we expect (convenience for development)
