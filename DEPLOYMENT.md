@@ -8,7 +8,7 @@ Backend (Render)
 
 1. Sign in to Render and connect your GitHub account.
 2. Create a new Web Service and select this repository. Set the "Root Directory" to the repo root (backend is the root in this monorepo).
-3. Build Command: npm ci
+3. Build Command: npm ci && npm run build --prefix frontend
 4. Start Command: npm start
 5. Add Environment Variables in the Render service settings:
    - DATABASE_URL (Render will provide a connection string after you create a DB)
@@ -16,7 +16,7 @@ Backend (Render)
    - OPENAI_KEY (your OpenAI API key)
 
 6. Create a Postgres instance in Render: New -> Postgres Database. Copy the DATABASE_URL and paste into the service env.
-7. Deploy the service. After the service is running, open the Render console and run migrations:
+7. Deploy the service. The build command above will build the frontend into `frontend/build` during deploy. After the service is running, open the Render console and run migrations:
    - In Render Shell: npm run migrate
 
 8. Verify the /health endpoint: https://your-backend.onrender.com/health
@@ -31,6 +31,15 @@ Frontend (Vercel)
    - REACT_APP_API_URL = https://your-backend.onrender.com
 
 5. Deploy. After deployment, copy the Vercel URL and add it to Render's FRONTEND_URL env and redeploy backend (or restart).
+
+Option B — Serve frontend from the same Render service (single deploy)
+--------------------------------------------------------------------
+
+If you prefer to serve the built frontend from the same Render backend (so the Render URL serves the SPA), use the Build Command above and ensure the server serves static files from `frontend/build` (this repo's `index.js` already serves that path). After deploy the Render URL will serve the frontend.
+
+Notes:
+- This approach builds frontend on each backend deploy and serves it from the same service.
+- Vercel provides better CDN and static hosting; use Option B only if you want a single service.
 
 Local development notes
 -----------------------

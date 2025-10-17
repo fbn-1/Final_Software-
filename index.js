@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Routes
 import uploadRoutes from "./routes/upload.js";
@@ -42,8 +44,26 @@ app.use("/transcripts", transcriptRoutes);
 app.use("/annotations", annotationsRouter);
 app.use("/bloombergdata", bloombergRouter);
 
+// Serve frontend build (if present) so the same Render service can host both API and UI
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendBuildPath = path.join(__dirname, 'frontend', 'build');
+app.use(express.static(frontendBuildPath));
+
 // Health endpoint for readiness checks
 app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+// For SPA client-side routing: return index.html for unknown GET requests that are not API routes
+app.get('*', (req, res, next) => {
+	// Only handle GET requests for non-API paths
+	if (req.method !== 'GET') return next();
+	const apiPrefixes = ['/upload', '/transcripts', '/annotations', '/bloombergdata', '/health', '/api'];
+	if (apiPrefixes.some(p => req.path.startsWith(p))) return next();
+	const indexHtml = path.join(frontendBuildPath, 'index.html');
+	return res.sendFile(indexHtml, err => {
+		if (err) return next();
+	});
+});
 
 
 
