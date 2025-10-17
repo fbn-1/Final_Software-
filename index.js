@@ -50,7 +50,33 @@ app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOStri
 // Ensure database columns/types we expect (convenience for development)
 async function ensureSchema() {
 	try {
-		// Add consultant_name if missing
+		// Ensure the base tables exist (use safe CREATE TABLE IF NOT EXISTS)
+		await pool.query(`
+		CREATE TABLE IF NOT EXISTS transcripts (
+		  id SERIAL PRIMARY KEY,
+		  filename TEXT,
+		  content TEXT,
+		  created_at TIMESTAMP DEFAULT now(),
+		  consultant_name TEXT,
+		  consultant_rating NUMERIC
+		);
+		`);
+
+		await pool.query(`
+		CREATE TABLE IF NOT EXISTS annotations (
+		  id SERIAL PRIMARY KEY,
+		  transcript_id INTEGER REFERENCES transcripts(id) ON DELETE CASCADE,
+		  text TEXT,
+		  ticker TEXT,
+		  sentiment VARCHAR(16),
+		  created_at TIMESTAMP DEFAULT now(),
+		  rating INTEGER,
+		  subsectors TEXT,
+		  datatitle TEXT
+		);
+		`);
+
+		// Add consultant_name if missing (safe for existing table)
 		await pool.query("ALTER TABLE transcripts ADD COLUMN IF NOT EXISTS consultant_name TEXT");
 		// Add consultant_rating as NUMERIC if missing
 		await pool.query("ALTER TABLE transcripts ADD COLUMN IF NOT EXISTS consultant_rating NUMERIC");
@@ -60,7 +86,7 @@ async function ensureSchema() {
 		} catch (e) {
 			// ignore if alter not applicable
 		}
-		console.log("✅ Ensured transcripts columns consultant_name and consultant_rating (NUMERIC)");
+		console.log("✅ Ensured transcripts and annotations tables and columns");
 	} catch (err) {
 		console.error("⚠️ Failed to ensure schema columns:", err.message);
 	}
