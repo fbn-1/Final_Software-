@@ -13,8 +13,23 @@ import pool from "./database/db.js";
 
 dotenv.config();
 const app = express();
+
 app.use(express.json());
+
+
+
 app.use(cors());
+
+// CORS: allow only the frontend origin (set FRONTEND_URL in env or default to localhost)
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+app.use(cors({
+	origin: (origin, callback) => {
+		// allow requests with no origin (like curl, server-to-server)
+		if (!origin) return callback(null, true);
+		if (origin === FRONTEND_URL) return callback(null, true);
+		return callback(new Error('CORS policy: This origin is not allowed'));
+	}
+}));
 
 // FFmpeg setup
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
@@ -26,6 +41,9 @@ app.use("/upload", uploadRoutes);
 app.use("/transcripts", transcriptRoutes);
 app.use("/annotations", annotationsRouter);
 app.use("/bloombergdata", bloombergRouter);
+
+// Health endpoint for readiness checks
+app.get('/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 
 
@@ -48,11 +66,14 @@ async function ensureSchema() {
 	}
 }
 
+const PORT = process.env.PORT || 5000;
+
 ensureSchema().then(() => {
-	app.listen(5000, () => {console.log("🚀 Server started on port 5000");});
+	app.listen(PORT, () => { console.log(`🚀 Server started on port ${PORT}`); });
 }).catch((err) => {
 	console.error("Failed to start server due to schema setup error:", err);
-	app.listen(5000, () => {console.log("🚀 Server started on port 5000 (schema setup failed)");});
+	// Still attempt to start server so Render can see logs and you can debug
+	app.listen(PORT, () => { console.log(`🚀 Server started on port ${PORT} (schema setup failed)`); });
 });
 
 
